@@ -1,0 +1,22 @@
+[
+  {
+    "url": "https://tds.s-anand.net/#/docker",
+    "title": "TDS Docker and Podman Guide",
+    "content": "This course uses containerization for consistent development environments. While we recommend Podman as the primary container tool, Docker is also acceptable for completing assignments. Podman is preferred because it runs without root privileges and has better security defaults. Students familiar with Docker can use it without issues, but should be aware that some course examples use Podman syntax."
+  },
+  {
+    "url": "https://tds.s-anand.net/#/assignments",
+    "title": "TDS Assignment Guidelines",
+    "content": "Graded Assignments (GA) are evaluated based on specific criteria. GA4 and GA5 have bonus components that can add extra points to your score. When you receive a bonus, it appears on the dashboard as an addition to your base score. For example, 10/10 + bonus shows as 110 on the dashboard. Always follow the exact model specifications mentioned in assignment questions."
+  },
+  {
+    "url": "https://tds.s-anand.net/#/ai-models",
+    "title": "AI Models and API Usage",
+    "content": "The course requires specific AI models for different assignments. When an assignment specifies gpt-3.5-turbo-0125, you must use that exact model even if the provided AI proxy only supports gpt-4o-mini. In such cases, use the OpenAI API directly. Model specifications are critical for consistent grading and results."
+  },
+  {
+    "url": "https://tds.s-anand.net/#/schedule",
+    "title": "TDS Course Schedule",
+    "content": "The Tools in Data Science course runs multiple times per year. Each cohort has its own schedule for assignments, discussions, and examinations. End-term exam dates are announced closer to the exam period. Check the course dashboard and official announcements for your specific cohort's schedule."
+  }
+]
