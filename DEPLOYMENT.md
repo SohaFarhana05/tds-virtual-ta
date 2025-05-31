@@ -98,6 +98,29 @@
      tds-virtual-ta
    ```
 
+## 🚀 GitHub Setup & Deployment
+
+### Step 1: Create GitHub Repository
+
+1. **Go to https://github.com/SohaFarhana05**
+2. **Click "New repository"**
+3. **Repository name:** `tds-virtual-ta`
+4. **Description:** `TDS Virtual TA - AI-powered teaching assistant with 100% test coverage`
+5. **Make it Public**
+6. **Don't initialize with README** (we already have one)
+
+### Step 2: Push to GitHub
+
+```bash
+cd /Users/sohafarhana/Desktop/TDS/Project-01
+git remote add origin https://github.com/SohaFarhana05/tds-virtual-ta.git
+git push -u origin main
+```
+
+### Step 3: Deploy (Choose One)
+
+**⚠️ Note:** GitHub Pages won't work for this project since it's a Python backend, not a static website.
+
 ## Environment Variables
 
 Required environment variables for production:
