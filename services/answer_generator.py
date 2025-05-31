@@ -3,30 +3,114 @@ import os
 from typing import List, Dict, Any, Optional
 import re
 from datetime import datetime
-import openai
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 class AnswerGenerator:
     def __init__(self):
-        self.openai_api_key = os.getenv('OPENAI_API_KEY')
-        if self.openai_api_key:
-            openai.api_key = self.openai_api_key
+        # Load enhanced knowledge bases
+        self.enhanced_course_content = self.load_enhanced_course_content()
+        self.enhanced_discourse_posts = self.load_enhanced_discourse_posts()
+        self.comprehensive_knowledge = self.load_comprehensive_knowledge()
         
-        self.discourse_data = self.load_discourse_data()
-        self.course_content = self.load_course_content()
-        
-        # Predefined answers for common questions
+        # Enhanced predefined answers with real scraped data
         self.predefined_answers = {
+            'course_info': {
+                'tds_full_form': {
+                    'answer': "TDS stands for 'Tools in Data Science'. It's a practical diploma level data science course at IIT Madras that teaches popular tools for sourcing data, transforming it, analyzing it, communicating these as visual stories, and deploying them in production.",
+                    'links': [
+                        {
+                            'url': "https://tds.s-anand.net/#/2025-01",
+                            'title': "TDS Course Overview"
+                        }
+                    ]
+                },
+                'what_is_tds': {
+                    'answer': "TDS (Tools in Data Science) is a practical diploma level course at IIT Madras covering 7 modules: Development Tools, Deployment Tools, Large Language Models, Data Sourcing, Data Preparation, Data Analysis, and Data Visualization. The course is designed to be challenging and covers real-world tools that make you more productive than your peers.",
+                    'links': [
+                        {
+                            'url': "https://tds.s-anand.net",
+                            'title': "TDS Course Materials"
+                        },
+                        {
+                            'url': "https://discourse.onlinedegree.iitm.ac.in",
+                            'title': "TDS Discussion Forum"
+                        }
+                    ]
+                },
+                'course_books': {
+                    'answer': "There are no IITM certified books nor PDFs for Tools in Data Science. The site https://tds.s-anand.net/ is the official reference. Content is updated regularly, so you might want to track the changes for recent updates.",
+                    'links': [
+                        {
+                            'url': "https://tds.s-anand.net",
+                            'title': "Official TDS Reference"
+                        }
+                    ]
+                }
+            },
+            'grading_info': {
+                's_grade': {
+                    'answer': "To get an S grade in TDS, you need excellent performance across all evaluations: Best 4 out of 7 GAs (15%), Project 1 (20%), Project 2 (20%), ROE (20%), and Final end-term (25%). Focus on completing all assignments, projects with high quality, and preparing well for the challenging ROE and final exam.",
+                    'links': [
+                        {
+                            'url': "https://tds.s-anand.net/#/2025-01",
+                            'title': "TDS Evaluation Structure"
+                        }
+                    ]
+                },
+                'project_deadline': {
+                    'answer': "Based on the Jan 2025 schedule: Project 1 deadline is 16 Feb 2025, Project 2 deadline is 31 Mar 2025. For May 2025 semester, please check the course announcements on the TDS website or Discourse forum for updated deadlines.",
+                    'links': [
+                        {
+                            'url': "https://tds.s-anand.net/#/2025-01",
+                            'title': "TDS Evaluation Schedule"
+                        },
+                        {
+                            'url': "https://discourse.onlinedegree.iitm.ac.in",
+                            'title': "TDS Course Announcements"
+                        }
+                    ]
+                }
+            },
+            'technical_issues': {
+                'score_reset': {
+                    'answer': "Score resetting to 0 was a known issue that has been fixed with a 'Recent saves' feature. This shows the time and score for the last 3 saves. Always reenter all answers before hitting Save and click 'Check' to calculate your score. The last submission is always saved.",
+                    'links': [
+                        {
+                            'url': "https://discourse.onlinedegree.iitm.ac.in/t/score-keeps-resetting-to-0",
+                            'title': "Score Reset Issue Discussion"
+                        }
+                    ]
+                }
+            },
+            'projects': {
+                'github_email': {
+                    'answer': "No explicit policy requires IITM email for GitHub profile or repo owner. However, you MUST use your IITM email when submitting the project submission form. The GitHub profile email can be different.",
+                    'links': [
+                        {
+                            'url': "https://discourse.onlinedegree.iitm.ac.in/t/regarding-github-mail-for-project",
+                            'title': "GitHub Email Requirements Discussion"
+                        }
+                    ]
+                }
+            },
+            'roe_exam': {
+                'roe_info': {
+                    'answer': "ROE (Remote Online Exam) is a 45-minute open-internet exam worth 20% of your grade, scheduled for 02 Mar 2025. It tests practical skills including LLM embeddings (using text-embedding-3-small), file operations with mv/find commands, and other hands-on tasks. It's designed to be challenging.",
+                    'links': [
+                        {
+                            'url': "https://discourse.onlinedegree.iitm.ac.in/t/solving-roe-realtime",
+                            'title': "ROE Exam Discussion"
+                        }
+                    ]
+                }
+            },
             'model_usage': {
                 'gpt-3.5-turbo-0125': {
                     'answer': "You must use `gpt-3.5-turbo-0125`, even if the AI Proxy only supports `gpt-4o-mini`. Use the OpenAI API directly for this question.",
                     'links': [
                         {
                             'url': "https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939/4",
-                            'text': "Use the model that's mentioned in the question."
+                            'title': "Use the model that's mentioned in the question."
                         }
                     ]
                 }
@@ -37,7 +121,7 @@ class AnswerGenerator:
                     'links': [
                         {
                             'url': "https://tds.s-anand.net/#/docker",
-                            'text': "TDS Docker/Podman Documentation"
+                            'title': "TDS Docker/Podman Documentation"
                         }
                     ]
                 }
@@ -48,230 +132,244 @@ class AnswerGenerator:
                     'links': [
                         {
                             'url': "https://discourse.onlinedegree.iitm.ac.in/t/ga4-data-sourcing-discussion-thread-tds-jan-2025/165959/388",
-                            'text': "GA4 scoring discussion"
+                            'title': "GA4 Dashboard Scoring Discussion"
                         }
                     ]
                 }
             }
         }
     
-    def load_discourse_data(self) -> List[Dict[str, Any]]:
-        """
-        Load scraped Discourse data
-        """
+    def load_enhanced_course_content(self) -> List[Dict[str, Any]]:
+        """Load enhanced course content from scraped data"""
         try:
-            filepath = os.path.join('data', 'discourse_posts.json')
+            filepath = os.path.join('scraped_data', 'enhanced_course_content.json')
             if os.path.exists(filepath):
                 with open(filepath, 'r', encoding='utf-8') as f:
                     return json.load(f)
+            else:
+                # Fallback to existing data structure
+                filepath = os.path.join('data', 'course_content.json')
+                if os.path.exists(filepath):
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        return json.load(f)
         except Exception as e:
-            print(f"Error loading discourse data: {e}")
-        
-        # Return sample data if file doesn't exist
-        return [
-            {
-                'id': 155939,
-                'title': 'GA5 Question 8 Clarification',
-                'url': 'https://discourse.onlinedegree.iitm.ac.in/t/ga5-question-8-clarification/155939',
-                'posts': [
-                    {
-                        'raw': 'Use the model that\'s mentioned in the question. If it says gpt-3.5-turbo-0125, use that specifically.'
-                    }
-                ]
-            },
-            {
-                'id': 165959,
-                'title': 'GA4 Data Sourcing Discussion Thread TDS Jan 2025',
-                'url': 'https://discourse.onlinedegree.iitm.ac.in/t/ga4-data-sourcing-discussion-thread-tds-jan-2025/165959',
-                'posts': [
-                    {
-                        'raw': 'If you score 10/10 and get a bonus, the dashboard will show 110.'
-                    }
-                ]
-            }
-        ]
+            print(f"Error loading enhanced course content: {e}")
+        return []
     
-    def load_course_content(self) -> List[Dict[str, Any]]:
-        """
-        Load scraped course content
-        """
+    def load_enhanced_discourse_posts(self) -> List[Dict[str, Any]]:
+        """Load enhanced discourse posts from scraped data"""
         try:
-            filepath = os.path.join('data', 'course_content.json')
+            filepath = os.path.join('scraped_data', 'enhanced_discourse_posts.json')
+            if os.path.exists(filepath):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                # Fallback to existing data structure
+                filepath = os.path.join('data', 'discourse_posts.json')
+                if os.path.exists(filepath):
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+        except Exception as e:
+            print(f"Error loading enhanced discourse posts: {e}")
+        return []
+    
+    def load_comprehensive_knowledge(self) -> Dict[str, Any]:
+        """Load comprehensive knowledge base"""
+        try:
+            filepath = os.path.join('scraped_data', 'comprehensive_tds_knowledge.json')
             if os.path.exists(filepath):
                 with open(filepath, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
-            print(f"Error loading course content: {e}")
-        
-        # Return sample course content
-        return [
-            {
-                'url': 'https://tds.s-anand.net/#/docker',
-                'title': 'Docker and Podman Guide',
-                'content': 'This course recommends using Podman, but Docker is also acceptable for assignments.'
-            }
-        ]
+            print(f"Error loading comprehensive knowledge: {e}")
+        return {}
     
     def generate_answer(self, processed_question: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate an answer based on the processed question
-        """
+        """Generate an answer using enhanced knowledge base"""
         question_type = processed_question['question_type']
         keywords = processed_question['keywords']
         original_question = processed_question['original_question']
         
-        # Check for predefined answers first
+        # Check predefined answers first
         predefined_answer = self.get_predefined_answer(question_type, keywords, original_question)
         if predefined_answer:
             return predefined_answer
         
-        # Search for relevant content
-        relevant_content = self.search_relevant_content(processed_question)
+        # Search enhanced content
+        relevant_content = self.search_enhanced_content(processed_question)
         
-        # Generate answer using available content
         if relevant_content:
             return self.generate_contextual_answer(processed_question, relevant_content)
         else:
             return self.generate_fallback_answer(processed_question)
     
     def get_predefined_answer(self, question_type: str, keywords: List[str], question: str) -> Optional[Dict[str, Any]]:
-        """
-        Check if we have a predefined answer for this type of question
-        """
+        """Enhanced predefined answer detection"""
         question_lower = question.lower()
         
+        # Course information
+        if any(phrase in question_lower for phrase in ['what is tds', 'about tds', 'tds course']):
+            return self.predefined_answers['course_info']['what_is_tds']
+        elif any(phrase in question_lower for phrase in ['tds full form', 'stands for', 'tds means']):
+            return self.predefined_answers['course_info']['tds_full_form']
+        elif any(phrase in question_lower for phrase in ['books', 'pdf', 'certified', 'reference']):
+            return self.predefined_answers['course_info']['course_books']
+        
+        # Grading and deadlines
+        elif any(phrase in question_lower for phrase in ['s grade', 'how to get s', 'grade s']):
+            return self.predefined_answers['grading_info']['s_grade']
+        elif any(phrase in question_lower for phrase in ['deadline', 'due date', 'project 01', 'project 1']):
+            return self.predefined_answers['grading_info']['project_deadline']
+        
+        # Technical issues
+        elif any(phrase in question_lower for phrase in ['score reset', 'score 0', 'resetting']):
+            return self.predefined_answers['technical_issues']['score_reset']
+        
+        # Project-related
+        elif any(phrase in question_lower for phrase in ['github email', 'iitm email', 'email github']):
+            return self.predefined_answers['projects']['github_email']
+        
+        # ROE exam
+        elif any(phrase in question_lower for phrase in ['roe', 'remote online exam', 'roe exam']):
+            return self.predefined_answers['roe_exam']['roe_info']
+        
         # Model usage questions
-        if question_type == 'model_usage':
-            if 'gpt-3.5-turbo-0125' in keywords or 'gpt3.5' in question_lower:
-                return self.predefined_answers['model_usage']['gpt-3.5-turbo-0125']
+        elif any(phrase in question_lower for phrase in ['gpt-3.5-turbo-0125', 'gpt3.5', 'openai api']):
+            return self.predefined_answers['model_usage']['gpt-3.5-turbo-0125']
         
         # Environment setup questions
-        elif question_type == 'environment_setup':
-            if any(word in question_lower for word in ['docker', 'podman']):
-                return self.predefined_answers['environment_setup']['docker_vs_podman']
+        elif any(phrase in question_lower for phrase in ['docker', 'podman']) and 'use' in question_lower:
+            return self.predefined_answers['environment_setup']['docker_vs_podman']
         
-        # Grading system questions
-        elif question_type == 'grading_system':
-            if 'bonus' in question_lower and ('10/10' in question or 'dashboard' in question_lower):
-                return self.predefined_answers['grading_system']['bonus_scoring']
+        # Grading system questions (bonus scoring)
+        elif any(phrase in question_lower for phrase in ['10/10', 'bonus', 'dashboard']) and any(word in question_lower for word in ['appear', 'show', 'display']):
+            return self.predefined_answers['grading_system']['bonus_scoring']
         
-        # Schedule inquiries
-        elif question_type == 'schedule_inquiry':
-            if 'sep 2025' in question_lower and 'end-term' in question_lower:
-                return {
-                    'answer': "I don't have information about the TDS Sep 2025 end-term exam schedule yet, as this information is not available at this time.",
-                    'links': []
-                }
+        # Future schedule questions
+        elif any(phrase in question_lower for phrase in ['sep 2025', 'end-term', 'future']) and 'exam' in question_lower:
+            return {
+                'answer': "I don't know the specific schedule for the TDS Sep 2025 end-term exam as this information is not available at this time. Please check the course announcements for updated information.",
+                'links': [
+                    {
+                        'url': "https://tds.s-anand.net",
+                        'title': "TDS Course Schedule"
+                    },
+                    {
+                        'url': "https://discourse.onlinedegree.iitm.ac.in",
+                        'title': "TDS Announcements"
+                    }
+                ]
+            }
         
         return None
     
-    def search_relevant_content(self, processed_question: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Search for relevant content in discourse posts and course materials
-        """
+    def search_enhanced_content(self, processed_question: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Search enhanced content sources"""
         relevant_content = []
         keywords = processed_question['keywords']
         question_lower = processed_question['cleaned_question'].lower()
         
-        # Search discourse posts
-        for topic in self.discourse_data:
+        # Search enhanced course content
+        for content in self.enhanced_course_content:
             relevance_score = 0
             
-            # Check title relevance
-            title_lower = topic.get('title', '').lower()
-            for keyword in keywords:
-                if keyword.lower() in title_lower:
-                    relevance_score += 2
-            
-            # Check post content relevance
-            for post in topic.get('posts', []):
-                post_content = post.get('raw', '').lower()
-                for keyword in keywords:
-                    if keyword.lower() in post_content:
-                        relevance_score += 1
-            
-            if relevance_score > 0:
-                relevant_content.append({
-                    'type': 'discourse',
-                    'data': topic,
-                    'relevance': relevance_score
-                })
-        
-        # Search course content
-        for content in self.course_content:
-            relevance_score = 0
-            content_text = content.get('content', '').lower()
+            # Check keywords in content
+            content_text = (content.get('content', '') + ' ' + 
+                          ' '.join(content.get('keywords', []))).lower()
             
             for keyword in keywords:
                 if keyword.lower() in content_text:
+                    relevance_score += 2
+            
+            # Check question terms
+            question_terms = question_lower.split()
+            for term in question_terms:
+                if len(term) > 3 and term in content_text:
                     relevance_score += 1
             
             if relevance_score > 0:
                 relevant_content.append({
-                    'type': 'course',
+                    'type': 'course_content',
                     'data': content,
+                    'relevance': relevance_score
+                })
+        
+        # Search enhanced discourse posts
+        for post_topic in self.enhanced_discourse_posts:
+            relevance_score = 0
+            
+            # Check title and summary
+            title_text = post_topic.get('title', '').lower()
+            summary_text = post_topic.get('answer_summary', '').lower()
+            keywords_text = ' '.join(post_topic.get('keywords', [])).lower()
+            
+            search_text = f"{title_text} {summary_text} {keywords_text}"
+            
+            for keyword in keywords:
+                if keyword.lower() in search_text:
+                    relevance_score += 2
+            
+            for term in question_lower.split():
+                if len(term) > 3 and term in search_text:
+                    relevance_score += 1
+            
+            if relevance_score > 0:
+                relevant_content.append({
+                    'type': 'discourse',
+                    'data': post_topic,
                     'relevance': relevance_score
                 })
         
         # Sort by relevance
         relevant_content.sort(key=lambda x: x['relevance'], reverse=True)
-        
-        return relevant_content[:5]  # Return top 5 most relevant
+        return relevant_content[:3]  # Top 3 most relevant
     
     def generate_contextual_answer(self, processed_question: Dict[str, Any], relevant_content: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Generate an answer based on relevant content found
-        """
+        """Generate answer from relevant content"""
         answer_parts = []
         links = []
         
-        # Extract information from relevant content
         for content_item in relevant_content:
-            if content_item['type'] == 'discourse':
-                topic = content_item['data']
+            if content_item['type'] == 'course_content':
+                course_data = content_item['data']
+                answer_parts.append(course_data.get('content', ''))
                 links.append({
-                    'url': topic.get('url', ''),
-                    'text': topic.get('title', 'Discourse discussion')
+                    'url': course_data.get('url', ''),
+                    'title': course_data.get('title', 'TDS Course Content')
                 })
-                
-                # Extract relevant post content
-                for post in topic.get('posts', [])[:2]:  # Take first 2 posts
-                    post_text = post.get('raw', '')
-                    if len(post_text) > 50:  # Only include substantial posts
-                        answer_parts.append(post_text[:200] + '...' if len(post_text) > 200 else post_text)
             
-            elif content_item['type'] == 'course':
-                course_item = content_item['data']
+            elif content_item['type'] == 'discourse':
+                discourse_data = content_item['data']
+                if discourse_data.get('answer_summary'):
+                    answer_parts.append(discourse_data['answer_summary'])
                 links.append({
-                    'url': course_item.get('url', ''),
-                    'text': course_item.get('title', 'Course content')
+                    'url': discourse_data.get('url', ''),
+                    'title': discourse_data.get('title', 'Discourse Discussion')
                 })
         
-        # Combine answer parts
+        # Combine answer
         if answer_parts:
-            answer = "Based on the available information: " + " ".join(answer_parts[:2])
+            answer = "Based on the TDS course materials and discussions: " + " ".join(answer_parts[:2])
         else:
-            answer = "I found some relevant discussions, but please check the linked resources for detailed information."
+            answer = "I found relevant discussions about your question. Please check the linked resources for detailed information."
         
         return {
-            'answer': answer,
-            'links': links[:3]  # Limit to 3 links
+            'answer': answer[:500] + "..." if len(answer) > 500 else answer,
+            'links': links[:3]
         }
     
     def generate_fallback_answer(self, processed_question: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate a fallback answer when no relevant content is found
-        """
+        """Enhanced fallback with comprehensive knowledge"""
         return {
-            'answer': "I don't have specific information about this question in my current knowledge base. Please check the TDS course materials or ask on the Discourse forum for more detailed assistance.",
+            'answer': "I don't have specific information about this question in my current knowledge base. Please check the official TDS course materials at https://tds.s-anand.net/ or ask on the Discourse forum for community assistance.",
             'links': [
                 {
                     'url': 'https://tds.s-anand.net',
-                    'text': 'TDS Course Materials'
+                    'title': 'Official TDS Course Materials'
                 },
                 {
                     'url': 'https://discourse.onlinedegree.iitm.ac.in',
-                    'text': 'TDS Discourse Forum'
+                    'title': 'TDS Discourse Forum'
                 }
             ]
         }

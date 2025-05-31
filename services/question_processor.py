@@ -79,7 +79,14 @@ class QuestionProcessor:
         """
         question_lower = question.lower()
         
-        if any(word in question_lower for word in ['gpt', 'model', 'ai-proxy', 'openai']):
+        # Course information questions
+        if any(phrase in question_lower for phrase in ['what is tds', 'tds full form', 'stands for', 'about tds', 'tools in data science']):
+            return 'course_info'
+        # Grading and deadline questions
+        elif any(word in question_lower for word in ['grade', 'grading', 'deadline', 'due date', 'project 01', 'project 1', 's grade']):
+            return 'grading_system'
+        # Model usage questions
+        elif any(word in question_lower for word in ['gpt', 'model', 'ai-proxy', 'openai']):
             return 'model_usage'
         elif any(word in question_lower for word in ['docker', 'podman', 'container']):
             return 'environment_setup'

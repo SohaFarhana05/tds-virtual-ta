@@ -87,7 +87,7 @@ async def answer_question(request: QuestionRequest):
         response = AnswerResponse(
             answer=answer_data['answer'],
             links=[
-                LinkResponse(url=link['url'], text=link['text'])
+                LinkResponse(url=link['url'], text=link.get('text', link.get('title', 'Link')))
                 for link in answer_data['links']
             ]
         )
@@ -105,8 +105,8 @@ async def get_stats():
     """
     Get API statistics and available data
     """
-    discourse_count = len(answer_generator.discourse_data)
-    course_content_count = len(answer_generator.course_content)
+    discourse_count = len(answer_generator.enhanced_discourse_posts)
+    course_content_count = len(answer_generator.enhanced_course_content)
     
     return {
         "discourse_topics": discourse_count,
